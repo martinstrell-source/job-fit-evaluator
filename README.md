@@ -58,3 +58,4 @@ The app opens at `http://localhost:8501`. The SQLite database and resume cache a
 ## Evaluation Framework
 
 Each evaluation covers: overall verdict with a 0–10 fit score, strong matches, gaps (hard blockers vs. bridgeable vs. preferred), level and culture fit, interview watch-outs, and framing recommendations. The prompt is in `prompt.py`.
+# job-fit-evaluator
