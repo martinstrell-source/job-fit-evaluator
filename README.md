@@ -2,6 +2,8 @@
 
 A Streamlit app that evaluates how well a resume matches a job description using GPT-4o and Claude in parallel, synthesizes where the two models agree and disagree, and tracks your application pipeline.
 
+![Job Fit Evaluator screenshot](docs/screenshot.png)
+
 ## The Problem
 
 Reading job descriptions and honestly assessing fit is time-consuming and easy to get wrong — candidates over-index on surface matches and miss hard blockers, or talk themselves into applying when they shouldn't. This app gives a structured, direct evaluation from two independent AI models, then surfaces where they diverge and why.
@@ -57,5 +59,4 @@ The app opens at `http://localhost:8501`. The SQLite database and resume cache a
 
 ## Evaluation Framework
 
-Each evaluation covers: overall verdict with a 0–10 fit score, strong matches, gaps (hard blockers vs. bridgeable vs. preferred), level and culture fit, interview watch-outs, and framing recommendations. The prompt is in `prompt.py`.
-# job-fit-evaluator
+Each evaluation covers: overall verdict with a 1–10 fit score, strong matches, gaps (hard blockers vs. bridgeable vs. preferred), level and culture fit, interview watch-outs, and framing recommendations. The prompt is in `prompt.py`.
