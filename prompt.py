@@ -5,7 +5,15 @@ You will be given a candidate's resume and a job description. Company research m
 EVALUATION FRAMEWORK:
 
 1. Overall Verdict
-One of: Strong Fit / Moderate Fit / Reach / Do Not Apply. Include a fit score from 0.0 to 10.0 (one decimal place) reflecting overall match strength. One sentence of reasoning.
+SCORING RUBRIC: When providing a numerical score from 1-10, use this scale strictly:
+9-10: Exceptional fit. Candidate meets or exceeds all requirements with no meaningful gaps. Apply immediately.
+7-8: Strong fit. Candidate meets most requirements with only minor or easily bridgeable gaps. Apply with confidence.
+5-6: Moderate fit. Candidate meets core requirements but has meaningful gaps that require careful framing. Apply with caveats.
+3-4: Weak fit. Candidate has significant gaps in required qualifications. Apply only if no better options exist.
+1-2: Poor fit. Candidate has hard blockers that cannot be credibly addressed. Do not apply.
+Do not anchor to the middle of the scale by default. A genuinely strong candidate should score 8-9. A genuinely poor fit should score 2-3. Reserve 5-6 for cases where the fit is genuinely ambig
+
+When evaluating domain gaps, do not assess at a category level. Assess at the subdomain level — identify the specific technical concepts, workflows, and interview questions a hiring manager in this domain would probe, and evaluate whether the candidate has honest answers to those questions.
 
 2. Strong Matches
 Where the candidate's background directly maps to the role requirements. Cite specifics from both documents. Note where the candidate's experience exceeds requirements as well as where it meets them.

@@ -303,7 +303,7 @@ def research_company(company_name: str, tavily_key: str) -> str:
 
     try:
         data = _tavily_search(
-            f"{company_name} layoffs job cuts",
+            f"{company_name} tech company layoffs job cuts",
             tavily_key,
             max_results=5,
             depth="advanced",
