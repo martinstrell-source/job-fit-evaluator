@@ -103,17 +103,44 @@ def delete_evaluation(row_id: int) -> None:
 
 # --- Helpers ---
 
+def _extract_score(text: str) -> str:
+    """Pull a 1-10 fit score, tolerating '7/10', '7.5/10', '7 out of 10', 'score: 7', or a bare '7.5'."""
+    patterns = (
+        r"(\d{1,2}(?:\.\d)?)\s*/\s*10",
+        r"(\d{1,2}(?:\.\d)?)\s+out of\s+10",
+        r"score[:*\s]+(\d{1,2}(?:\.\d)?)",
+        r"\b(\d\.\d)\b",
+    )
+    for pat in patterns:
+        m = re.search(pat, text, re.IGNORECASE)
+        if m and 0 < float(m.group(1)) <= 10:
+            return m.group(1)
+    return ""
+
+
 def _extract_verdict(text: str) -> str:
-    """Return '<score> · Apply' or '<score> · Don't Apply'."""
-    if "Do Not Apply" in text:
+    """Return '<score> · Apply' or '<score> · Don't Apply' (or whichever part is found)."""
+    low = text.lower()
+    if re.search(r"do\s*not\s*apply|don'?t\s*apply", low):
         label = "Don't Apply"
-    elif any(v in text for v in ("Strong Fit", "Moderate Fit", "Reach")):
+    elif re.search(r"\bapply\b", low) or any(v in low for v in ("strong fit", "moderate fit", "reach")):
         label = "Apply"
     else:
-        return "Unknown"
-    score_match = re.search(r"\b(\d+\.\d)\b", text[:600])
-    score = score_match.group(1) if score_match else ""
-    return f"{score} · {label}" if score else label
+        label = ""
+    score = _extract_score(text)
+    if score and label:
+        return f"{score} · {label}"
+    return score or label or "Unknown"
+
+
+def _verdict_score(verdict: str):
+    """Parse the leading numeric score from a stored verdict like '8 · Apply' or '7.5 · Apply'."""
+    if not verdict:
+        return None
+    m = re.match(r"\s*(\d{1,2}(?:\.\d)?)", verdict)
+    if m and 0 < float(m.group(1)) <= 10:
+        return float(m.group(1))
+    return None
 
 
 def _extract_job_title(job_text: str, openai_key: str) -> str:
@@ -343,6 +370,7 @@ def _run_claude(anthropic_key: str, user_content: str) -> str:
     response = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=2000,
+        temperature=0.2,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_content}],
     )
@@ -531,7 +559,9 @@ with tab_pipeline:
     else:
         # Keep id for updates but hide it from display
         display_df = df[["id", "created_at", "company", "job_title", "gpt_verdict", "claude_verdict", "status"]].copy()
-        display_df.columns = ["id", "Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Status"]
+        gap_series = df["gpt_verdict"].map(_verdict_score) - df["claude_verdict"].map(_verdict_score)
+        display_df.insert(6, "gap", gap_series.map(lambda x: f"{x:+.1f}" if pd.notna(x) else ""))
+        display_df.columns = ["id", "Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap", "Status"]
 
         edited = st.data_editor(
             display_df,
@@ -543,7 +573,7 @@ with tab_pipeline:
                     required=True,
                 ),
             },
-            disabled=["Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict"],
+            disabled=["Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap"],
             hide_index=True,
             use_container_width=True,
         )
