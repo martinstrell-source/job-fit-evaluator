@@ -51,8 +51,10 @@ TAVILY_API_KEY    = "tvly-..."
 **3. Run**
 
 ```bash
-streamlit run app.py
+./run.sh
 ```
+
+`run.sh` launches the app using the project's own `.venv`, regardless of which environment is active in your shell. Running `streamlit run app.py` directly can pick up a system-wide Streamlit that lacks the dependencies (`ModuleNotFoundError: No module named 'openai'`); `./run.sh` avoids that.
 
 The app opens at `http://localhost:8501`. The SQLite database and resume cache are stored in `~/.job-fit-evaluator/`.
 
