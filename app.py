@@ -6,6 +6,8 @@ from evaluator import (
     PIPELINE_STATUSES,
     save_resume,
     load_resume,
+    load_settings,
+    save_settings,
     save_evaluation,
     load_evaluations,
     update_status,
@@ -184,10 +186,20 @@ with tab_pipeline:
     else:
         # --- Derived scores + min-total filter ---
         total_s = df["gpt_verdict"].map(_verdict_score) + df["claude_verdict"].map(_verdict_score)
+
+        def _save_min_total():
+            settings = load_settings()
+            settings["min_total"] = st.session_state["min_total_input"]
+            save_settings(settings)
+
+        if "min_total_input" not in st.session_state:
+            st.session_state["min_total_input"] = int(load_settings().get("min_total", 0))
         min_total = st.number_input(
             "Minimum total score (GPT + Claude, out of 20)",
-            min_value=0, max_value=20, value=0, step=1,
-            help="Hide matches below this combined total. 0 shows everything; rows without a score are hidden when this is above 0.",
+            min_value=0, max_value=20, step=1,
+            key="min_total_input",
+            on_change=_save_min_total,
+            help="Hide matches below this combined total. 0 shows everything; rows without a score are hidden when this is above 0. Remembered for next time.",
         )
         if min_total > 0:
             df = df[total_s >= min_total]

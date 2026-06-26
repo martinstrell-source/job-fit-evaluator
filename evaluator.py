@@ -24,6 +24,7 @@ from prompt import SYSTEM_PROMPT
 _DATA_DIR = Path.home() / ".job-fit-evaluator"
 RESUME_CACHE = _DATA_DIR / "resume.txt"
 DB_PATH = _DATA_DIR / "pipeline.db"
+SETTINGS_PATH = _DATA_DIR / "settings.json"
 
 PIPELINE_STATUSES = ["N/A", "Applied", "Phone Screen", "Interview", "Offer", "Rejected"]
 
@@ -64,6 +65,20 @@ def load_resume() -> str:
         return RESUME_CACHE.read_text(encoding="utf-8")
     except FileNotFoundError:
         return ""
+
+
+# --- UI settings persistence ---
+
+def load_settings() -> dict:
+    try:
+        return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_settings(settings: dict) -> None:
+    _DATA_DIR.mkdir(parents=True, exist_ok=True)
+    SETTINGS_PATH.write_text(json.dumps(settings), encoding="utf-8")
 
 
 # --- SQLite pipeline ---
