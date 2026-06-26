@@ -3,5 +3,10 @@
   {"ats": "greenhouse", "slug": "gleanwork", "company": "Glean", "descriptor": "Glean, the enterprise AI work assistant and knowledge-search company (glean.com)"},
   {"ats": "greenhouse", "slug": "liberate", "company": "Liberate", "descriptor": "Liberate, the AI voice/agent automation company for the insurance industry (liberateinc.com)"},
   {"ats": "greenhouse", "slug": "faire", "company": "Faire", "descriptor": "Faire, the online wholesale marketplace connecting independent brands and retailers (faire.com)"},
-  {"ats": "ashby", "slug": "zip", "company": "Zip", "descriptor": "Zip, the procurement orchestration / intake-to-pay software company (ziphq.com), NOT the Australian buy-now-pay-later firm Zip Co"}
+  {"ats": "ashby", "slug": "zip", "company": "Zip", "descriptor": "Zip, the procurement orchestration / intake-to-pay software company (ziphq.com), NOT the Australian buy-now-pay-later firm Zip Co"},
+  {"ats": "greenhouse", "slug": "databricks", "company": "Databricks", "descriptor": "Databricks, the data and AI platform / lakehouse company (databricks.com)"},
+  {"ats": "ashby", "slug": "sierra", "company": "Sierra", "descriptor": "Sierra, the enterprise conversational-AI agent platform co-founded by Bret Taylor (sierra.ai)"},
+  {"ats": "ashby", "slug": "openai", "company": "OpenAI", "descriptor": "OpenAI, the AI research company behind ChatGPT and the OpenAI API (openai.com)"},
+  {"ats": "greenhouse", "slug": "anthropic", "company": "Anthropic", "descriptor": "Anthropic, the AI safety company behind the Claude models (anthropic.com)"},
+  {"ats": "greenhouse", "slug": "scaleai", "company": "Scale AI", "descriptor": "Scale AI, the data-labeling and AI data platform company (scale.com)"}
 ]
