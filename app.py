@@ -216,43 +216,45 @@ with tab_pipeline:
                 "Link": df["job_url"],
             })
 
-            edited = st.data_editor(
+            event = st.dataframe(
                 display_df,
+                key="pipeline_table",
+                on_select="rerun",
+                selection_mode="single-row",
                 column_config={
                     "id": None,  # hide the id column
-                    "Status": st.column_config.SelectboxColumn(
-                        "Status",
-                        options=PIPELINE_STATUSES,
-                        required=True,
-                    ),
                     "Link": st.column_config.LinkColumn("Link", display_text="Open"),
                 },
-                disabled=["Found", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap", "Total", "Source", "Link"],
                 hide_index=True,
                 use_container_width=True,
             )
 
-            # Persist any status changes
-            changed = edited[edited["Status"] != display_df["Status"]]
-            for _, row in changed.iterrows():
-                update_status(int(row["id"]), row["Status"])
-            if not changed.empty:
-                st.toast(f"Updated {len(changed)} status{'es' if len(changed) > 1 else ''}.")
-
-            # Detail view + delete
             st.divider()
             st.subheader("Evaluation details")
-            options = {f"{r['company']} — {r['job_title']} ({r['created_at']})": i for i, r in df.iterrows()}
-            detail_col, reeval_col, delete_col = st.columns([5, 1.5, 1])
-            with detail_col:
-                selected_label = st.selectbox("Select an evaluation", list(options.keys()), label_visibility="collapsed")
-            with reeval_col:
-                reeval_clicked = st.button("🔄 Re-evaluate", use_container_width=True)
-            with delete_col:
-                delete_clicked = st.button("🗑 Delete", use_container_width=True)
+            selected_rows = event.selection.rows
+            if not selected_rows:
+                st.caption("Select a row in the table above to see its details.")
+            else:
+                selected_row = df.iloc[selected_rows[0]]
+                row_id = int(selected_row["id"])
 
-            if selected_label:
-                selected_row = df.iloc[options[selected_label]]
+                head_col, status_col, reeval_col, delete_col = st.columns([4, 2, 1.5, 1])
+                with head_col:
+                    st.markdown(f"**{selected_row['company']} — {selected_row['job_title']}**")
+                with status_col:
+                    current_status = selected_row["status"] if selected_row["status"] in PIPELINE_STATUSES else "N/A"
+                    new_status = st.selectbox(
+                        "Status", PIPELINE_STATUSES, index=PIPELINE_STATUSES.index(current_status),
+                        key=f"status_{row_id}", label_visibility="collapsed",
+                    )
+                    if new_status != current_status:
+                        update_status(row_id, new_status)
+                        st.toast(f"Status set to {new_status}.")
+                        st.rerun()
+                with reeval_col:
+                    reeval_clicked = st.button("🔄 Re-evaluate", use_container_width=True)
+                with delete_col:
+                    delete_clicked = st.button("🗑 Delete", use_container_width=True)
 
                 if delete_clicked:
                     delete_evaluation(int(selected_row["id"]))
