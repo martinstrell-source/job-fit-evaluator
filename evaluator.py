@@ -362,7 +362,42 @@ def _tavily_search(query: str, api_key: str, max_results: int = 3, depth: str = 
     return resp.json()
 
 
-def research_company(company_name: str, tavily_key: str) -> str:
+def _summarize_layoffs(company_name: str, results: list[dict], openai_key: str, context: str = "") -> str:
+    """Use a cheap model to extract layoffs specific to this company, ignoring
+    general tech-industry layoff news and articles about a different organization
+    or place that merely shares the name."""
+    none_msg = f"No specific layoff information found for {company_name}."
+    blob = "\n\n".join(
+        f"TITLE: {r.get('title', '')}\n{(r.get('content') or '')[:600]}"
+        for r in results[:5] if r.get("content")
+    )
+    if not blob.strip():
+        return none_msg
+    client = openai.OpenAI(api_key=openai_key)
+    context_block = f"For context, here is what this company is:\n{context}\n\n" if context.strip() else ""
+    prompt = (
+        f"Determine whether the company named '{company_name}' has had layoffs, job cuts, "
+        f"or restructuring, using ONLY the search snippets below.\n"
+        f"{context_block}"
+        f"- Report only layoffs at this specific company. Ignore general tech-industry layoff "
+        f"statistics or trends.\n"
+        f"- If the snippets are about a different organization, a city/place, or a person that "
+        f"merely shares the name '{company_name}', treat that as no information.\n"
+        f"- If there is clear evidence about this company, give a one-sentence factual summary "
+        f"with timing and scale if available.\n"
+        f"- Otherwise respond with exactly: {none_msg}\n\n"
+        f"SNIPPETS:\n{blob}"
+    )
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=120,
+        temperature=0,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return resp.choices[0].message.content.strip() or none_msg
+
+
+def research_company(company_name: str, tavily_key: str, openai_key: str | None = None) -> str:
     name_lower = company_name.lower()
 
     def snippets_by_title(results: list[dict]) -> list[str]:
@@ -390,21 +425,28 @@ def research_company(company_name: str, tavily_key: str) -> str:
         except Exception:
             pass
 
+    # Keep layoffs company-specific. A generic "tech layoffs" query surfaces
+    # industry-wide news, and common-word company names ("Glean", "Lead") match
+    # unrelated articles, so query the company by name and (when a model key is
+    # available) have a cheap model extract only layoffs about this company.
     try:
         data = _tavily_search(
-            f"{company_name} tech company layoffs job cuts",
+            f'{company_name} layoffs OR "job cuts" OR restructuring',
             tavily_key,
             max_results=5,
             depth="advanced",
-            include_answer=True,
         )
-        answer = data.get("answer", "")
-        title_snippets = snippets_by_title(data.get("results", []))
-        layoff_text = answer or (" | ".join(title_snippets[:2]) if title_snippets else "")
-        if layoff_text and name_lower in layoff_text.lower():
-            sections.append(f"**Layoffs:** {layoff_text}")
+        results = data.get("results", [])
+        if openai_key:
+            sections.append(f"**Layoffs:** {_summarize_layoffs(company_name, results, openai_key, chr(10).join(sections))}")
         else:
-            sections.append(f"**Layoffs:** No specific layoff information found for {company_name}.")
+            layoff_kw = re.compile(
+                r"layoff|laid off|job cut|workforce reduction|restructur|downsiz|hiring freeze",
+                re.IGNORECASE,
+            )
+            snips = [s for s in snippets_by_title(results) if layoff_kw.search(s)]
+            sections.append("**Layoffs:** " + (" | ".join(snips[:2]) if snips
+                            else f"No specific layoff information found for {company_name}."))
     except Exception:
         pass
 

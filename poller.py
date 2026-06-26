@@ -108,7 +108,7 @@ def main() -> None:
             research = ""
             if keys["TAVILY_API_KEY"]:
                 try:
-                    research = research_company(comp, keys["TAVILY_API_KEY"])
+                    research = research_company(comp, keys["TAVILY_API_KEY"], keys["OPENAI_API_KEY"])
                 except Exception:
                     research = ""
             research_cache[comp] = research

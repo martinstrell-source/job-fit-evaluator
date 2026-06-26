@@ -81,7 +81,7 @@ with tab_eval:
                         with st.spinner("Researching company..."):
                             try:
                                 name = extract_company_name(text, st.secrets["OPENAI_API_KEY"])
-                                research = research_company(name, st.secrets["TAVILY_API_KEY"])
+                                research = research_company(name, st.secrets["TAVILY_API_KEY"], st.secrets["OPENAI_API_KEY"])
                                 st.session_state["company_name"] = name
                                 st.session_state["company_research"] = research
                             except Exception as e:
@@ -105,7 +105,7 @@ with tab_eval:
                 with st.spinner("Researching company..."):
                     try:
                         name = extract_company_name(job_description, st.secrets["OPENAI_API_KEY"])
-                        research = research_company(name, st.secrets["TAVILY_API_KEY"])
+                        research = research_company(name, st.secrets["TAVILY_API_KEY"], st.secrets["OPENAI_API_KEY"])
                         st.session_state["company_name"] = name
                         st.session_state["company_research"] = research
                         st.success(f"Research complete for {name}.")
