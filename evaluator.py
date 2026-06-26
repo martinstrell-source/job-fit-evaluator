@@ -170,14 +170,28 @@ def _extract_score(text: str) -> str:
 
 
 def _extract_verdict(text: str) -> str:
-    """Return '<score> · Apply' or '<score> · Don't Apply' (or whichever part is found)."""
+    """Return '<score> · Apply' or '<score> · Don't Apply' (or whichever part is found).
+
+    The recommendation is read from the bottom-line / verdict region rather than
+    the whole body, so a passing mention of "do not apply" in the gaps discussion
+    does not flip the label.
+    """
     low = text.lower()
-    if re.search(r"do\s*not\s*apply|don'?t\s*apply", low):
+    no = r"do\s*not\s*apply|don'?t\s*apply"
+    m = re.search(r"bottom line", low)
+    region = low[m.start():] if m else low[-400:]
+
+    if re.search(no, region):
+        label = "Don't Apply"
+    elif re.search(r"\bapply\b", region):
+        label = "Apply"
+    elif re.search(no, low):
         label = "Don't Apply"
     elif re.search(r"\bapply\b", low) or any(v in low for v in ("strong fit", "moderate fit", "reach")):
         label = "Apply"
     else:
         label = ""
+
     score = _extract_score(text)
     if score and label:
         return f"{score} · {label}"
