@@ -92,21 +92,30 @@ def _db() -> sqlite3.Connection:
         conn.execute("ALTER TABLE evaluations ADD COLUMN source_id TEXT")
     if "job_url" not in cols:
         conn.execute("ALTER TABLE evaluations ADD COLUMN job_url TEXT")
+    if "gpt_analysis" not in cols:
+        conn.execute("ALTER TABLE evaluations ADD COLUMN gpt_analysis TEXT")
+    if "claude_analysis" not in cols:
+        conn.execute("ALTER TABLE evaluations ADD COLUMN claude_analysis TEXT")
+    if "company_research" not in cols:
+        conn.execute("ALTER TABLE evaluations ADD COLUMN company_research TEXT")
     conn.commit()
     return conn
 
 
 def save_evaluation(company: str, job_title: str, gpt_verdict: str, claude_verdict: str,
                     synthesis: str, job_description: str = "",
-                    source_id: str | None = None, job_url: str = "") -> None:
+                    source_id: str | None = None, job_url: str = "",
+                    gpt_analysis: str = "", claude_analysis: str = "",
+                    company_research: str = "") -> None:
     with _db() as conn:
         conn.execute(
             "INSERT INTO evaluations "
             "(created_at, company, job_title, gpt_verdict, claude_verdict, synthesis, status, "
-            "job_description, source_id, job_url) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "job_description, source_id, job_url, gpt_analysis, claude_analysis, company_research) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (datetime.now().strftime("%Y-%m-%d %H:%M"), company, job_title,
-             gpt_verdict, claude_verdict, synthesis, "N/A", job_description, source_id, job_url),
+             gpt_verdict, claude_verdict, synthesis, "N/A", job_description, source_id, job_url,
+             gpt_analysis, claude_analysis, company_research),
         )
 
 
@@ -125,7 +134,8 @@ def load_evaluations() -> pd.DataFrame:
     with _db() as conn:
         df = pd.read_sql_query(
             "SELECT id, created_at, company, job_title, gpt_verdict, claude_verdict, "
-            "synthesis, status, job_description, job_url, source_id "
+            "synthesis, status, job_description, job_url, source_id, "
+            "gpt_analysis, claude_analysis, company_research "
             "FROM evaluations ORDER BY created_at DESC",
             conn,
         )
@@ -137,13 +147,15 @@ def update_status(row_id: int, status: str) -> None:
         conn.execute("UPDATE evaluations SET status = ? WHERE id = ?", (status, row_id))
 
 
-def update_evaluation(row_id: int, gpt_verdict: str, claude_verdict: str, synthesis: str) -> None:
+def update_evaluation(row_id: int, gpt_verdict: str, claude_verdict: str, synthesis: str,
+                      gpt_analysis: str = "", claude_analysis: str = "") -> None:
     # Note: created_at is left untouched so it stays the original "found" date,
     # even when a row is re-evaluated.
     with _db() as conn:
         conn.execute(
-            "UPDATE evaluations SET gpt_verdict=?, claude_verdict=?, synthesis=? WHERE id=?",
-            (gpt_verdict, claude_verdict, synthesis, row_id),
+            "UPDATE evaluations SET gpt_verdict=?, claude_verdict=?, synthesis=?, "
+            "gpt_analysis=?, claude_analysis=? WHERE id=?",
+            (gpt_verdict, claude_verdict, synthesis, gpt_analysis, claude_analysis, row_id),
         )
 
 

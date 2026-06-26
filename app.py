@@ -163,6 +163,9 @@ with tab_eval:
                         claude_verdict=_extract_verdict(claude_result),
                         synthesis=synthesis,
                         job_description=job_description,
+                        gpt_analysis=gpt_result,
+                        claude_analysis=claude_result,
+                        company_research=company_research,
                     )
                     st.success("Saved to pipeline.")
                 except Exception as e:
@@ -278,6 +281,8 @@ with tab_pipeline:
                             gpt_verdict=_extract_verdict(gpt_result),
                             claude_verdict=_extract_verdict(claude_result),
                             synthesis=synthesis,
+                            gpt_analysis=gpt_result,
+                            claude_analysis=claude_result,
                         )
                         st.toast(f"Re-evaluated {selected_row['company']} — {selected_row['job_title']}.")
                         st.rerun()
@@ -285,5 +290,23 @@ with tab_pipeline:
                 if selected_row.get("job_url"):
                     st.markdown(f"[Open job posting ↗]({selected_row['job_url']})")
 
-                with st.expander("Full Synthesis", expanded=True):
+                research = selected_row.get("company_research")
+                if isinstance(research, str) and research.strip():
+                    with st.expander("Business overview", expanded=False):
+                        st.markdown(research)
+
+                gpt_a = selected_row.get("gpt_analysis")
+                claude_a = selected_row.get("claude_analysis")
+                if (isinstance(gpt_a, str) and gpt_a.strip()) or (isinstance(claude_a, str) and claude_a.strip()):
+                    ac1, ac2 = st.columns(2)
+                    with ac1:
+                        if isinstance(gpt_a, str) and gpt_a.strip():
+                            with st.expander("GPT-4o analysis", expanded=False):
+                                st.markdown(gpt_a)
+                    with ac2:
+                        if isinstance(claude_a, str) and claude_a.strip():
+                            with st.expander("Claude analysis", expanded=False):
+                                st.markdown(claude_a)
+
+                with st.expander("Synthesis (agreement & differences)", expanded=True):
                     st.markdown(selected_row["synthesis"])

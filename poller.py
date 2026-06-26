@@ -136,6 +136,9 @@ def main() -> None:
             job_description=p["description"],
             source_id=p["source_id"],
             job_url=p["url"],
+            gpt_analysis=res["gpt_result"],
+            claude_analysis=res["claude_result"],
+            company_research=research,
         )
         evaluated += 1
 
