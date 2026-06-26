@@ -49,7 +49,7 @@ def discover() -> list[dict]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Poll target ATS boards and auto-evaluate new product postings.")
-    ap.add_argument("--threshold", type=float, default=7.0, help="Alert when the Claude score is >= this (default 7.0)")
+    ap.add_argument("--threshold", type=float, default=12.0, help="Alert when the GPT+Claude total is >= this (default 12, out of 20)")
     ap.add_argument("--limit", type=int, default=0, help="Max new postings to evaluate this run (0 = no limit)")
     ap.add_argument("--dry-run", action="store_true", help="List new matching postings but make no model calls")
     ap.add_argument("--no-notify", action="store_true", help="Skip notifications (still prints)")
@@ -119,16 +119,18 @@ def main() -> None:
         )
 
         gs, cs = res["gpt_score"], res["claude_score"]
+        total = (gs + cs) if (gs is not None and cs is not None) else None
         gap = (gs - cs) if (gs is not None and cs is not None) else None
-        gap_str = f" (gap {gap:+.1f})" if gap is not None else ""
-        print(f"  • {comp} — {p['title']}: GPT {gs} / Claude {cs}{gap_str}")
+        extra = f" (total {total:.1f}, gap {gap:+.1f})" if total is not None else ""
+        print(f"  • {comp} — {p['title']}: GPT {gs} / Claude {cs}{extra}")
 
-        if cs is not None and cs >= args.threshold:
+        if total is not None and total >= args.threshold:
             alerts += 1
+            msg = f"GPT {gs} + Claude {cs} = {total:.1f} — {p['title']}"
             if args.no_notify:
-                print(f"    [strong fit] Claude {cs}, GPT {gs}  {p['url']}")
+                print(f"    [strong fit] {msg}  {p['url']}")
             else:
-                notify(f"Strong fit: {comp}", f"Claude {cs}, GPT {gs} — {p['title']}", p["url"])
+                notify(f"Strong fit: {comp}", msg, p["url"])
 
     print(f"\nDone. {len(new)} evaluated, {alerts} above threshold ({args.threshold}).")
 

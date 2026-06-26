@@ -70,7 +70,7 @@ Edit the `TARGETS` list in `poller.py` to choose companies (each is an ATS plus 
 ./.venv/bin/python poller.py --limit 5        # cap how many new postings to evaluate this run
 ```
 
-Flags: `--threshold N` (alert when the Claude score is ≥ N, default 7.0), `--bay-area-only`, `--limit N`, `--dry-run`, `--no-notify`. Same role posted in several locations is collapsed to one (preferring the Bay Area / remote copy), and a senior-product title filter drops junior and intern roles before any model calls.
+Flags: `--threshold N` (alert when the GPT + Claude total is ≥ N, out of 20, default 12), `--bay-area-only`, `--limit N`, `--dry-run`, `--no-notify`. Same role posted in several locations is collapsed to one (preferring the Bay Area / remote copy), and a senior-product title filter drops junior and intern roles before any model calls.
 
 Schedule it to run every few hours with cron or launchd, e.g.:
 
