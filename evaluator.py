@@ -131,7 +131,7 @@ def load_evaluations() -> pd.DataFrame:
     with _db() as conn:
         df = pd.read_sql_query(
             "SELECT id, created_at, company, job_title, gpt_verdict, claude_verdict, "
-            "synthesis, status, job_description "
+            "synthesis, status, job_description, job_url "
             "FROM evaluations ORDER BY created_at DESC",
             conn,
         )

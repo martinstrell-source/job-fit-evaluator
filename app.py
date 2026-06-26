@@ -180,10 +180,10 @@ with tab_pipeline:
         st.info("No evaluations yet. Run an evaluation to populate the pipeline.")
     else:
         # Keep id for updates but hide it from display
-        display_df = df[["id", "created_at", "company", "job_title", "gpt_verdict", "claude_verdict", "status"]].copy()
+        display_df = df[["id", "created_at", "company", "job_title", "gpt_verdict", "claude_verdict", "status", "job_url"]].copy()
         gap_series = df["gpt_verdict"].map(_verdict_score) - df["claude_verdict"].map(_verdict_score)
         display_df.insert(6, "gap", gap_series.map(lambda x: f"{x:+.1f}" if pd.notna(x) else ""))
-        display_df.columns = ["id", "Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap", "Status"]
+        display_df.columns = ["id", "Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap", "Status", "Link"]
 
         edited = st.data_editor(
             display_df,
@@ -194,8 +194,9 @@ with tab_pipeline:
                     options=PIPELINE_STATUSES,
                     required=True,
                 ),
+                "Link": st.column_config.LinkColumn("Link", display_text="Open"),
             },
-            disabled=["Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap"],
+            disabled=["Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap", "Link"],
             hide_index=True,
             use_container_width=True,
         )
@@ -252,6 +253,9 @@ with tab_pipeline:
                     )
                     st.toast(f"Re-evaluated {selected_row['company']} — {selected_row['job_title']}.")
                     st.rerun()
+
+            if selected_row.get("job_url"):
+                st.markdown(f"[Open job posting ↗]({selected_row['job_url']})")
 
             with st.expander("Full Synthesis", expanded=True):
                 st.markdown(selected_row["synthesis"])

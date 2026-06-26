@@ -10,6 +10,8 @@ The resume is read from the same local cache the app uses, so paste your resume
 in the app once before the first run.
 """
 import argparse
+import json
+from pathlib import Path
 
 from evaluator import (
     get_keys,
@@ -22,8 +24,9 @@ from evaluator import (
 from sources import fetch_source, is_relevant_title, dedupe_by_role, is_bay_or_remote
 from notify import notify
 
-# Named targets. Add a company by dropping in its ATS + board slug.
-TARGETS = [
+# Named targets live in targets.json (edit that to add/remove companies).
+# This built-in list is the fallback if the file is missing or unreadable.
+_DEFAULT_TARGETS = [
     {"ats": "ashby", "slug": "harvey", "company": "Harvey"},
     {"ats": "greenhouse", "slug": "gleanwork", "company": "Glean"},
     {"ats": "greenhouse", "slug": "liberate", "company": "Liberate"},
@@ -32,10 +35,24 @@ TARGETS = [
 ]
 
 
+def load_targets() -> list[dict]:
+    """Read the company list from targets.json, falling back to the built-in defaults."""
+    path = Path(__file__).parent / "targets.json"
+    if path.exists():
+        try:
+            data = json.loads(path.read_text())
+            if isinstance(data, list) and data:
+                return data
+            print("  ! targets.json is empty or not a list; using built-in defaults")
+        except Exception as e:
+            print(f"  ! could not read targets.json ({e}); using built-in defaults")
+    return _DEFAULT_TARGETS
+
+
 def discover() -> list[dict]:
     """Fetch all targets and return relevant product postings."""
     candidates = []
-    for t in TARGETS:
+    for t in load_targets():
         try:
             postings = fetch_source(t["ats"], t["slug"], t["company"])
         except Exception as e:

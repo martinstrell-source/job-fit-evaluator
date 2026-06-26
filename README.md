@@ -62,7 +62,7 @@ The app opens at `http://localhost:8501`. The SQLite database and resume cache a
 
 `poller.py` checks target companies' ATS boards for new product roles, auto-evaluates the genuinely new ones with the same dual-model logic, stores them in the pipeline, and alerts you on strong fits. It reuses the resume cached by the app, so paste your resume in the app once before the first run.
 
-Edit the `TARGETS` list in `poller.py` to choose companies (each is an ATS plus a board slug; Greenhouse and Ashby are supported). The core logic lives in `evaluator.py` so both the app and the poller share it.
+Edit `targets.json` to choose companies (each is an ATS plus a board slug; Greenhouse and Ashby are supported). The core logic lives in `evaluator.py` so both the app and the poller share it.
 
 ```bash
 ./.venv/bin/python poller.py --dry-run        # discover + filter only, no model calls
