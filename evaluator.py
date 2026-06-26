@@ -397,7 +397,8 @@ def _summarize_layoffs(company_name: str, results: list[dict], openai_key: str, 
     return resp.choices[0].message.content.strip() or none_msg
 
 
-def research_company(company_name: str, tavily_key: str, openai_key: str | None = None) -> str:
+def research_company(company_name: str, tavily_key: str, openai_key: str | None = None,
+                     descriptor: str = "") -> str:
     name_lower = company_name.lower()
 
     def snippets_by_title(results: list[dict]) -> list[str]:
@@ -438,7 +439,8 @@ def research_company(company_name: str, tavily_key: str, openai_key: str | None 
         )
         results = data.get("results", [])
         if openai_key:
-            sections.append(f"**Layoffs:** {_summarize_layoffs(company_name, results, openai_key, chr(10).join(sections))}")
+            ctx = ((descriptor + "\n" if descriptor else "") + "\n".join(sections)).strip()
+            sections.append(f"**Layoffs:** {_summarize_layoffs(company_name, results, openai_key, ctx)}")
         else:
             layoff_kw = re.compile(
                 r"layoff|laid off|job cut|workforce reduction|restructur|downsiz|hiring freeze",

@@ -59,6 +59,8 @@ def discover() -> list[dict]:
             print(f"  ! {t['company']} fetch failed: {e}")
             continue
         relevant = [p for p in postings if is_relevant_title(p["title"])]
+        for p in relevant:
+            p["descriptor"] = t.get("descriptor", "")
         print(f"{t['company']}: {len(postings)} postings, {len(relevant)} product roles")
         candidates.extend(relevant)
     return candidates
@@ -108,7 +110,7 @@ def main() -> None:
             research = ""
             if keys["TAVILY_API_KEY"]:
                 try:
-                    research = research_company(comp, keys["TAVILY_API_KEY"], keys["OPENAI_API_KEY"])
+                    research = research_company(comp, keys["TAVILY_API_KEY"], keys["OPENAI_API_KEY"], descriptor=p.get("descriptor", ""))
                 except Exception:
                     research = ""
             research_cache[comp] = research

@@ -1,7 +1,7 @@
 [
-  {"ats": "ashby", "slug": "harvey", "company": "Harvey"},
-  {"ats": "greenhouse", "slug": "gleanwork", "company": "Glean"},
-  {"ats": "greenhouse", "slug": "liberate", "company": "Liberate"},
-  {"ats": "greenhouse", "slug": "faire", "company": "Faire"},
-  {"ats": "ashby", "slug": "zip", "company": "Zip"}
+  {"ats": "ashby", "slug": "harvey", "company": "Harvey", "descriptor": "Harvey AI, the generative-AI company for legal and professional services (harvey.ai)"},
+  {"ats": "greenhouse", "slug": "gleanwork", "company": "Glean", "descriptor": "Glean, the enterprise AI work assistant and knowledge-search company (glean.com)"},
+  {"ats": "greenhouse", "slug": "liberate", "company": "Liberate", "descriptor": "Liberate, the AI voice/agent automation company for the insurance industry (liberateinc.com)"},
+  {"ats": "greenhouse", "slug": "faire", "company": "Faire", "descriptor": "Faire, the online wholesale marketplace connecting independent brands and retailers (faire.com)"},
+  {"ats": "ashby", "slug": "zip", "company": "Zip", "descriptor": "Zip, the procurement orchestration / intake-to-pay software company (ziphq.com), NOT the Australian buy-now-pay-later firm Zip Co"}
 ]
