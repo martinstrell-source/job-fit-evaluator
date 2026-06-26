@@ -267,7 +267,19 @@ with tab_pipeline:
                     elif not resume_text.strip():
                         st.error("No resume found. Paste your resume in the Evaluator tab first.")
                     else:
+                        company_name = (selected_row.get("company") or "").strip()
+                        research = ""
+                        if company_name and "TAVILY_API_KEY" in st.secrets:
+                            with st.spinner("Researching company..."):
+                                try:
+                                    research = research_company(
+                                        company_name, st.secrets["TAVILY_API_KEY"], st.secrets["OPENAI_API_KEY"]
+                                    )
+                                except Exception:
+                                    research = ""
                         user_content = f"RESUME:\n{resume_text}\n\nJOB DESCRIPTION:\n{jd}"
+                        if research:
+                            user_content = f"COMPANY RESEARCH:\n{research}\n\n" + user_content
                         with st.spinner("Re-evaluating with GPT-4o and Claude in parallel..."):
                             with ThreadPoolExecutor(max_workers=2) as executor:
                                 gpt_future = executor.submit(_run_gpt4o, st.secrets["OPENAI_API_KEY"], user_content)
@@ -283,6 +295,7 @@ with tab_pipeline:
                             synthesis=synthesis,
                             gpt_analysis=gpt_result,
                             claude_analysis=claude_result,
+                            company_research=(research or None),
                         )
                         st.toast(f"Re-evaluated {selected_row['company']} — {selected_row['job_title']}.")
                         st.rerun()

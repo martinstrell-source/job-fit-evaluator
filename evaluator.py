@@ -148,15 +148,25 @@ def update_status(row_id: int, status: str) -> None:
 
 
 def update_evaluation(row_id: int, gpt_verdict: str, claude_verdict: str, synthesis: str,
-                      gpt_analysis: str = "", claude_analysis: str = "") -> None:
-    # Note: created_at is left untouched so it stays the original "found" date,
-    # even when a row is re-evaluated.
+                      gpt_analysis: str = "", claude_analysis: str = "",
+                      company_research: str | None = None) -> None:
+    # created_at is left untouched so it stays the original "found" date even when
+    # a row is re-evaluated. company_research is only overwritten when provided
+    # (None leaves any existing business overview in place).
     with _db() as conn:
-        conn.execute(
-            "UPDATE evaluations SET gpt_verdict=?, claude_verdict=?, synthesis=?, "
-            "gpt_analysis=?, claude_analysis=? WHERE id=?",
-            (gpt_verdict, claude_verdict, synthesis, gpt_analysis, claude_analysis, row_id),
-        )
+        if company_research is None:
+            conn.execute(
+                "UPDATE evaluations SET gpt_verdict=?, claude_verdict=?, synthesis=?, "
+                "gpt_analysis=?, claude_analysis=? WHERE id=?",
+                (gpt_verdict, claude_verdict, synthesis, gpt_analysis, claude_analysis, row_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE evaluations SET gpt_verdict=?, claude_verdict=?, synthesis=?, "
+                "gpt_analysis=?, claude_analysis=?, company_research=? WHERE id=?",
+                (gpt_verdict, claude_verdict, synthesis, gpt_analysis, claude_analysis,
+                 company_research, row_id),
+            )
 
 
 def delete_evaluation(row_id: int) -> None:
