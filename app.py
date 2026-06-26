@@ -179,83 +179,111 @@ with tab_pipeline:
     if df.empty:
         st.info("No evaluations yet. Run an evaluation to populate the pipeline.")
     else:
-        # Keep id for updates but hide it from display
-        display_df = df[["id", "created_at", "company", "job_title", "gpt_verdict", "claude_verdict", "status", "job_url"]].copy()
-        gap_series = df["gpt_verdict"].map(_verdict_score) - df["claude_verdict"].map(_verdict_score)
-        display_df.insert(6, "gap", gap_series.map(lambda x: f"{x:+.1f}" if pd.notna(x) else ""))
-        display_df.columns = ["id", "Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap", "Status", "Link"]
-
-        edited = st.data_editor(
-            display_df,
-            column_config={
-                "id": None,  # hide the id column
-                "Status": st.column_config.SelectboxColumn(
-                    "Status",
-                    options=PIPELINE_STATUSES,
-                    required=True,
-                ),
-                "Link": st.column_config.LinkColumn("Link", display_text="Open"),
-            },
-            disabled=["Date", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap", "Link"],
-            hide_index=True,
-            use_container_width=True,
+        # --- Derived scores + min-total filter ---
+        total_s = df["gpt_verdict"].map(_verdict_score) + df["claude_verdict"].map(_verdict_score)
+        min_total = st.number_input(
+            "Minimum total score (GPT + Claude, out of 20)",
+            min_value=0, max_value=20, value=0, step=1,
+            help="Hide matches below this combined total. 0 shows everything; rows without a score are hidden when this is above 0.",
         )
+        if min_total > 0:
+            df = df[total_s >= min_total]
+        df = df.reset_index(drop=True)
 
-        # Persist any status changes
-        changed = edited[edited["Status"] != display_df["Status"]]
-        for _, row in changed.iterrows():
-            update_status(int(row["id"]), row["Status"])
-        if not changed.empty:
-            st.toast(f"Updated {len(changed)} status{'es' if len(changed) > 1 else ''}.")
+        if df.empty:
+            st.info("No matches at or above the selected minimum total.")
+        else:
+            gpt_s = df["gpt_verdict"].map(_verdict_score)
+            claude_s = df["claude_verdict"].map(_verdict_score)
+            total_s = gpt_s + claude_s
+            gap_s = gpt_s - claude_s
+            source_s = df["source_id"].map(lambda v: "Auto" if (isinstance(v, str) and v) else "Manual")
 
-        # Detail view + delete
-        st.divider()
-        st.subheader("Evaluation details")
-        options = {f"{r['company']} — {r['job_title']} ({r['created_at']})": i for i, r in df.iterrows()}
-        detail_col, reeval_col, delete_col = st.columns([5, 1.5, 1])
-        with detail_col:
-            selected_label = st.selectbox("Select an evaluation", list(options.keys()), label_visibility="collapsed")
-        with reeval_col:
-            reeval_clicked = st.button("🔄 Re-evaluate", use_container_width=True)
-        with delete_col:
-            delete_clicked = st.button("🗑 Delete", use_container_width=True)
+            display_df = pd.DataFrame({
+                "id": df["id"],
+                "Found": df["created_at"],
+                "Company": df["company"],
+                "Job Title": df["job_title"],
+                "GPT-4o Verdict": df["gpt_verdict"],
+                "Claude Verdict": df["claude_verdict"],
+                "Gap": gap_s.map(lambda x: f"{x:+.1f}" if pd.notna(x) else ""),
+                "Total": total_s.map(lambda x: f"{x:.1f}" if pd.notna(x) else ""),
+                "Source": source_s,
+                "Status": df["status"],
+                "Link": df["job_url"],
+            })
 
-        if selected_label:
-            selected_row = df.iloc[options[selected_label]]
+            edited = st.data_editor(
+                display_df,
+                column_config={
+                    "id": None,  # hide the id column
+                    "Status": st.column_config.SelectboxColumn(
+                        "Status",
+                        options=PIPELINE_STATUSES,
+                        required=True,
+                    ),
+                    "Link": st.column_config.LinkColumn("Link", display_text="Open"),
+                },
+                disabled=["Found", "Company", "Job Title", "GPT-4o Verdict", "Claude Verdict", "Gap", "Total", "Source", "Link"],
+                hide_index=True,
+                use_container_width=True,
+            )
 
-            if delete_clicked:
-                delete_evaluation(int(selected_row["id"]))
-                st.toast(f"Deleted {selected_row['company']} — {selected_row['job_title']}.")
-                st.rerun()
+            # Persist any status changes
+            changed = edited[edited["Status"] != display_df["Status"]]
+            for _, row in changed.iterrows():
+                update_status(int(row["id"]), row["Status"])
+            if not changed.empty:
+                st.toast(f"Updated {len(changed)} status{'es' if len(changed) > 1 else ''}.")
 
-            if reeval_clicked:
-                jd = selected_row.get("job_description", "") or ""
-                resume_text = load_resume()
-                if not jd.strip():
-                    st.error("No job description stored for this entry — open it in the Evaluator tab and run a fresh evaluation.")
-                elif not resume_text.strip():
-                    st.error("No resume found. Paste your resume in the Evaluator tab first.")
-                else:
-                    user_content = f"RESUME:\n{resume_text}\n\nJOB DESCRIPTION:\n{jd}"
-                    with st.spinner("Re-evaluating with GPT-4o and Claude in parallel..."):
-                        with ThreadPoolExecutor(max_workers=2) as executor:
-                            gpt_future = executor.submit(_run_gpt4o, st.secrets["OPENAI_API_KEY"], user_content)
-                            claude_future = executor.submit(_run_claude, st.secrets["ANTHROPIC_API_KEY"], user_content)
-                            gpt_result = gpt_future.result()
-                            claude_result = claude_future.result()
-                    with st.spinner("Synthesizing..."):
-                        synthesis = _run_synthesis(st.secrets["ANTHROPIC_API_KEY"], gpt_result, claude_result)
-                    update_evaluation(
-                        row_id=int(selected_row["id"]),
-                        gpt_verdict=_extract_verdict(gpt_result),
-                        claude_verdict=_extract_verdict(claude_result),
-                        synthesis=synthesis,
-                    )
-                    st.toast(f"Re-evaluated {selected_row['company']} — {selected_row['job_title']}.")
+            # Detail view + delete
+            st.divider()
+            st.subheader("Evaluation details")
+            options = {f"{r['company']} — {r['job_title']} ({r['created_at']})": i for i, r in df.iterrows()}
+            detail_col, reeval_col, delete_col = st.columns([5, 1.5, 1])
+            with detail_col:
+                selected_label = st.selectbox("Select an evaluation", list(options.keys()), label_visibility="collapsed")
+            with reeval_col:
+                reeval_clicked = st.button("🔄 Re-evaluate", use_container_width=True)
+            with delete_col:
+                delete_clicked = st.button("🗑 Delete", use_container_width=True)
+
+            if selected_label:
+                selected_row = df.iloc[options[selected_label]]
+
+                if delete_clicked:
+                    delete_evaluation(int(selected_row["id"]))
+                    st.toast(f"Deleted {selected_row['company']} — {selected_row['job_title']}.")
                     st.rerun()
 
-            if selected_row.get("job_url"):
-                st.markdown(f"[Open job posting ↗]({selected_row['job_url']})")
+                if reeval_clicked:
+                    jd = selected_row.get("job_description", "") or ""
+                    resume_text = load_resume()
+                    if not jd.strip():
+                        st.error("No job description stored for this entry — open it in the Evaluator tab and run a fresh evaluation.")
+                    elif not resume_text.strip():
+                        st.error("No resume found. Paste your resume in the Evaluator tab first.")
+                    else:
+                        user_content = f"RESUME:\n{resume_text}\n\nJOB DESCRIPTION:\n{jd}"
+                        with st.spinner("Re-evaluating with GPT-4o and Claude in parallel..."):
+                            with ThreadPoolExecutor(max_workers=2) as executor:
+                                gpt_future = executor.submit(_run_gpt4o, st.secrets["OPENAI_API_KEY"], user_content)
+                                claude_future = executor.submit(_run_claude, st.secrets["ANTHROPIC_API_KEY"], user_content)
+                                gpt_result = gpt_future.result()
+                                claude_result = claude_future.result()
+                        with st.spinner("Synthesizing..."):
+                            synthesis = _run_synthesis(st.secrets["ANTHROPIC_API_KEY"], gpt_result, claude_result)
+                        update_evaluation(
+                            row_id=int(selected_row["id"]),
+                            gpt_verdict=_extract_verdict(gpt_result),
+                            claude_verdict=_extract_verdict(claude_result),
+                            synthesis=synthesis,
+                        )
+                        st.toast(f"Re-evaluated {selected_row['company']} — {selected_row['job_title']}.")
+                        st.rerun()
 
-            with st.expander("Full Synthesis", expanded=True):
-                st.markdown(selected_row["synthesis"])
+                if selected_row.get("job_url"):
+                    st.markdown(f"[Open job posting ↗]({selected_row['job_url']})")
+
+                with st.expander("Full Synthesis", expanded=True):
+                    st.markdown(selected_row["synthesis"])

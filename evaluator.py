@@ -34,12 +34,6 @@ _CONFIG_NAMES = (
     "OPENAI_API_KEY",
     "ANTHROPIC_API_KEY",
     "TAVILY_API_KEY",
-    # Email alerting (used by notify.py); optional.
-    "EMAIL_ADDRESS",       # sender, e.g. martin.strell@gmail.com
-    "EMAIL_APP_PASSWORD",  # Gmail app password (not your normal password)
-    "EMAIL_TO",            # recipient; defaults to EMAIL_ADDRESS if blank
-    "SMTP_HOST",           # defaults to smtp.gmail.com
-    "SMTP_PORT",           # defaults to 465
 )
 
 
@@ -131,7 +125,7 @@ def load_evaluations() -> pd.DataFrame:
     with _db() as conn:
         df = pd.read_sql_query(
             "SELECT id, created_at, company, job_title, gpt_verdict, claude_verdict, "
-            "synthesis, status, job_description, job_url "
+            "synthesis, status, job_description, job_url, source_id "
             "FROM evaluations ORDER BY created_at DESC",
             conn,
         )
@@ -144,10 +138,12 @@ def update_status(row_id: int, status: str) -> None:
 
 
 def update_evaluation(row_id: int, gpt_verdict: str, claude_verdict: str, synthesis: str) -> None:
+    # Note: created_at is left untouched so it stays the original "found" date,
+    # even when a row is re-evaluated.
     with _db() as conn:
         conn.execute(
-            "UPDATE evaluations SET gpt_verdict=?, claude_verdict=?, synthesis=?, created_at=? WHERE id=?",
-            (gpt_verdict, claude_verdict, synthesis, datetime.now().strftime("%Y-%m-%d %H:%M"), row_id),
+            "UPDATE evaluations SET gpt_verdict=?, claude_verdict=?, synthesis=? WHERE id=?",
+            (gpt_verdict, claude_verdict, synthesis, row_id),
         )
 
 

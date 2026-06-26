@@ -60,7 +60,7 @@ The app opens at `http://localhost:8501`. The SQLite database and resume cache a
 
 ## Automated polling
 
-`poller.py` checks target companies' ATS boards for new product roles, auto-evaluates the genuinely new ones with the same dual-model logic, stores them in the pipeline, and alerts you on strong fits. It reuses the resume cached by the app, so paste your resume in the app once before the first run.
+`poller.py` checks target companies' ATS boards for new product roles, auto-evaluates the genuinely new ones with the same dual-model logic, and stores them in the pipeline. Review matches in the app's Pipeline tab, which has a minimum-total filter and a Source column showing whether a row came from automation or a manual check. It reuses the resume cached by the app, so paste your resume in the app once before the first run.
 
 Edit `targets.json` to choose companies (each is an ATS plus a board slug; Greenhouse and Ashby are supported). The core logic lives in `evaluator.py` so both the app and the poller share it.
 
@@ -70,23 +70,15 @@ Edit `targets.json` to choose companies (each is an ATS plus a board slug; Green
 ./.venv/bin/python poller.py --limit 5        # cap how many new postings to evaluate this run
 ```
 
-Flags: `--threshold N` (alert when the GPT + Claude total is ≥ N, out of 20, default 12), `--bay-area-only`, `--limit N`, `--dry-run`, `--no-notify`. Same role posted in several locations is collapsed to one (preferring the Bay Area / remote copy), and a senior-product title filter drops junior and intern roles before any model calls.
+Flags: `--threshold N` (the GPT + Claude total, out of 20, default 12, used to mark strong fits in the run output), `--bay-area-only`, `--limit N`, `--dry-run`, `--no-notify`. Same role posted in several locations is collapsed to one (preferring the Bay Area / remote copy), and a senior-product title filter drops junior and intern roles before any model calls.
+
+Every evaluated posting is saved to the pipeline regardless of score (so dedup works and you keep the full record); the threshold only flags strong fits in the run output. Strong fits print an `[ALERT]` line to stdout / the poller log. Review everything in the app's Pipeline tab and use its minimum-total filter to focus on the strong ones.
 
 Schedule it to run every few hours with cron or launchd, e.g.:
 
 ```cron
 0 */4 * * * cd /path/to/job-fit-evaluator && ./.venv/bin/python poller.py --bay-area-only >> ~/.job-fit-evaluator/poller.log 2>&1
 ```
-
-**Email alerts (optional).** Add to `.streamlit/secrets.toml`:
-
-```toml
-EMAIL_ADDRESS      = "you@gmail.com"
-EMAIL_APP_PASSWORD = "abcd efgh ijkl mnop"   # Gmail App Password, not your login password
-EMAIL_TO           = "you@gmail.com"          # optional; defaults to EMAIL_ADDRESS
-```
-
-Gmail needs an App Password (Google Account → Security → 2-Step Verification → App passwords). Without email configured, alerts fall back to a macOS desktop notification; either way they print to stdout.
 
 ## Evaluation Framework
 
