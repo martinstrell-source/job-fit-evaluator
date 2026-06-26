@@ -40,4 +40,34 @@ What will a sharp interviewer probe given the gaps? What should the candidate pr
 For each bridgeable gap identified in section 3, provide specific, concrete framing the candidate could use in an interview or cover letter. Avoid generic statements about transferable skills. Reference actual experience from the resume.
 
 7. Bottom Line
-Apply or don't. If yes, what is the single most important thing to emphasize? If no, why not in one sentence."""
+Apply or don't. If yes, what is the single most important thing to emphasize? If no, why not in one sentence.
+
+OUTPUT FORMAT (follow exactly, so the two evaluations look consistent and are easy to compare side by side):
+Render the response with these Markdown section headers, in this order, with nothing before the first header:
+
+## 1. Overall Verdict
+**Score:** N/10  (a single number from 1 to 10)
+**Recommendation:** Apply  (or Do Not Apply)
+Then 1-2 sentences summarizing the fit.
+
+## 2. Strong Matches
+- one point per bullet
+
+## 3. Gaps
+- **Hard blocker:** ... (omit this bullet if there are none)
+- **Bridgeable:** ...
+- **Preferred:** ...
+
+## 4. Level and Culture Fit
+2-4 sentences.
+
+## 5. Interview Watch-outs
+- one item per bullet
+
+## 6. Framing Recommendations
+- one bullet per bridgeable gap
+
+## 7. Bottom Line
+Begin with **Apply** or **Do Not Apply**, then one sentence.
+
+Formatting rules: use "## " for every section header exactly as written; use "- " for every bullet; use **bold** only for the labels shown above. Do not add extra sections, preambles, or closing remarks."""
