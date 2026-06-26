@@ -163,7 +163,7 @@ def _extract_score(text: str) -> str:
     patterns = (
         r"(\d{1,2}(?:\.\d)?)\s*/\s*10",
         r"(\d{1,2}(?:\.\d)?)\s+out of\s+10",
-        r"score[:*\s]+(\d{1,2}(?:\.\d)?)",
+        r"\b(?:verdict|rating|fit score|score)\b[:*\s]+(\d{1,2}(?:\.\d)?)\b",
         r"\b(\d\.\d)\b",
     )
     for pat in patterns:

@@ -101,7 +101,7 @@ def main() -> None:
 
     print(f"\nEvaluating {len(new)} posting(s)...\n")
     research_cache: dict[str, str] = {}
-    alerts = 0
+    alerts = evaluated = failed = 0
     for p in new:
         comp = p["company"]
         if comp not in research_cache:
@@ -121,6 +121,7 @@ def main() -> None:
                 company_research=research,
             )
         except Exception as e:
+            failed += 1
             print(f"  ! eval failed for {comp} — {p['title']}: {e}")
             continue
 
@@ -134,6 +135,7 @@ def main() -> None:
             source_id=p["source_id"],
             job_url=p["url"],
         )
+        evaluated += 1
 
         gs, cs = res["gpt_score"], res["claude_score"]
         total = (gs + cs) if (gs is not None and cs is not None) else None
@@ -149,7 +151,7 @@ def main() -> None:
             else:
                 notify(f"Strong fit: {comp}", msg, p["url"])
 
-    print(f"\nDone. {len(new)} evaluated, {alerts} above threshold ({args.threshold}).")
+    print(f"\nDone. {evaluated} evaluated, {failed} failed, {alerts} above threshold ({args.threshold}).")
 
 
 if __name__ == "__main__":
