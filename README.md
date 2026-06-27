@@ -74,11 +74,9 @@ Flags: `--threshold N` (the GPT + Claude total, out of 20, default 12, used to m
 
 Every evaluated posting is saved to the pipeline regardless of score (so dedup works and you keep the full record); the threshold only flags strong fits in the run output. Strong fits print an `[ALERT]` line to stdout / the poller log. Review everything in the app's Pipeline tab and use its minimum-total filter to focus on the strong ones.
 
-Schedule it to run every few hours with cron or launchd, e.g.:
+Schedule it so it runs on its own (recommended over long manual runs, which can time out). On macOS, use the included launchd agent template `com.jobfitevaluator.poller.plist.example`: edit the paths, copy it to `~/Library/LaunchAgents/`, and `launchctl load -w` it. It runs daily at 8am and logs to `~/.job-fit-evaluator/poller.log`. Trigger a test run with `launchctl start com.jobfitevaluator.poller`. (cron works too: `0 8 * * * cd /path/to/job-fit-evaluator && ./.venv/bin/python poller.py --bay-area-only >> ~/.job-fit-evaluator/poller.log 2>&1`.)
 
-```cron
-0 */4 * * * cd /path/to/job-fit-evaluator && ./.venv/bin/python poller.py --bay-area-only >> ~/.job-fit-evaluator/poller.log 2>&1
-```
+Daily runs are tiny and cheap because dedup means only genuinely new postings get evaluated. The first run after adding several companies is the exception: it evaluates their whole current backlog at once, so run that one manually (optionally in chunks with `--limit`) and watch the Anthropic balance.
 
 ## Evaluation Framework
 
